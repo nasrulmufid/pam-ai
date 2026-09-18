@@ -16,7 +16,7 @@ const distDir = path.join(projectRoot, "dist");
 const instructionsPath = path.join(projectRoot, "instructions-model.md");
 
 const PORT = Number(process.env.PORT || 3001);
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 const TEMPERATURE = Number(process.env.GEMINI_TEMPERATURE || 0.7);
 const MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 8192);
 
