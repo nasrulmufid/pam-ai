@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "functions": {
+    "api/chat.mjs": {
+      "includeFiles": "instructions-model.md",
+      "maxDuration": 60,
+      "supportsCancellation": true
+    },
+    "api/health.mjs": {
+      "maxDuration": 10
+    }
+  }
+}
