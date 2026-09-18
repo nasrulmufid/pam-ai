@@ -16,10 +16,10 @@ PAM AI dirancang untuk membantu aktivitas developer seperti menulis kode, debugg
 - API key Gemini hanya digunakan di backend dan tidak dikirim ke browser.
 - Instruksi/role AI dapat diatur melalui `instructions-model.md`.
 - Validasi request menggunakan Zod.
-- Rate limiting pada endpoint API.
+- Rate limiting pada endpoint API Express untuk local/VPS/Docker.
 - Security headers menggunakan Helmet.
 - Response compression.
-- Siap dijalankan secara lokal maupun menggunakan Docker.
+- Siap dijalankan secara lokal, VPS, Docker, maupun Vercel.
 
 ## Tech Stack
 
@@ -220,6 +220,206 @@ http://localhost:3001
 
 Pada mode production, Express akan melayani frontend hasil build sekaligus endpoint API.
 
+## Deploy ke Vercel
+
+Repository ini sudah mendukung deployment langsung ke Vercel.
+
+Pada Vercel, frontend tetap dibangun menggunakan Vite, sedangkan backend menggunakan Vercel Functions:
+
+```text
+Browser
+  |
+  | https://domain-vercel.app
+  v
+React + Vite
+  |
+  | /api/chat
+  v
+Vercel Function
+  |
+  v
+Google Gemini API
+```
+
+File yang digunakan khusus untuk Vercel:
+
+```text
+api/
+├── chat.mjs       # POST /api/chat
+└── health.mjs     # GET /api/health
+
+vercel.json         # Konfigurasi Vercel Functions
+```
+
+### 1. Import Repository ke Vercel
+
+Buka Vercel Dashboard lalu pilih:
+
+```text
+Add New
+→ Project
+→ Import Git Repository
+→ nasrulmufid/pam-ai
+```
+
+Vercel akan mendeteksi project sebagai Vite.
+
+Pengaturan build yang digunakan:
+
+```text
+Framework Preset : Vite
+Build Command    : npm run build
+Output Directory : dist
+Install Command  : npm install
+```
+
+Biasanya pengaturan tersebut terdeteksi otomatis sehingga tidak perlu diubah.
+
+### 2. Tambahkan Environment Variables
+
+Masuk ke:
+
+```text
+Vercel Dashboard
+→ Project PAM AI
+→ Settings
+→ Environment Variables
+```
+
+Tambahkan minimal:
+
+```env
+GEMINI_API_KEY=API_KEY_GEMINI_ANDA
+```
+
+Environment variable tambahan yang dapat digunakan:
+
+```env
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_TEMPERATURE=0.7
+GEMINI_MAX_OUTPUT_TOKENS=8192
+```
+
+Sebaiknya aktifkan variable tersebut untuk environment:
+
+```text
+Production
+Preview
+Development
+```
+
+> Jangan menggunakan `VITE_GEMINI_API_KEY`. API key harus tetap menjadi server-side environment variable agar tidak masuk ke bundle frontend.
+
+### 3. Deploy
+
+Jika project sudah terhubung dengan GitHub, push ke branch yang digunakan Vercel akan memicu deployment baru secara otomatis.
+
+Anda juga dapat menjalankan redeploy dari:
+
+```text
+Vercel Dashboard
+→ Deployments
+→ pilih deployment
+→ Redeploy
+```
+
+### 4. Cek Health Endpoint
+
+Setelah deployment selesai, buka:
+
+```text
+https://DOMAIN_ANDA.vercel.app/api/health
+```
+
+Contoh response:
+
+```json
+{
+  "ok": true,
+  "model": "gemini-2.5-flash",
+  "runtime": "vercel"
+}
+```
+
+Jika endpoint tersebut mengembalikan JSON di atas, Vercel Function sudah aktif.
+
+### 5. Tes Chat
+
+Frontend menggunakan endpoint:
+
+```text
+POST /api/chat
+```
+
+Karena menggunakan relative URL, frontend otomatis memanggil domain Vercel yang sama:
+
+```text
+https://DOMAIN_ANDA.vercel.app/api/chat
+```
+
+Tidak perlu mengubah `src/lib/api.ts`.
+
+### Troubleshooting Vercel
+
+#### `/api/chat` menghasilkan 404
+
+Pastikan repository yang di-deploy sudah memiliki:
+
+```text
+api/chat.mjs
+api/health.mjs
+vercel.json
+```
+
+Kemudian lakukan redeploy.
+
+#### Chat menghasilkan error konfigurasi server
+
+Pastikan `GEMINI_API_KEY` sudah ditambahkan pada Environment Variables Vercel.
+
+Setelah menambah atau mengubah environment variable, lakukan deployment ulang agar nilai terbaru digunakan oleh function.
+
+#### Health endpoint bekerja tetapi chat gagal
+
+Periksa Function Logs pada:
+
+```text
+Vercel Dashboard
+→ Project
+→ Logs
+```
+
+Kemungkinan penyebab antara lain API key tidak valid, quota Gemini habis, model tidak tersedia pada API key tersebut, atau request ke provider AI gagal.
+
+### Catatan Arsitektur Vercel
+
+Vercel tidak menggunakan `server/index.mjs` untuk melayani aplikasi production.
+
+Pembagiannya adalah:
+
+```text
+Local development
+    Vite :5173
+       ↓
+    Express :3001
+
+VPS / Docker
+    Express :3001
+       ├── React dist
+       └── Gemini API
+
+Vercel
+    Vite static build
+       ↓
+    /api/*.mjs
+       ↓
+    Vercel Functions
+       ↓
+    Gemini API
+```
+
+Dengan struktur ini, repository yang sama dapat digunakan untuk local development, VPS, Docker, dan Vercel tanpa mengubah URL API pada frontend.
+
 ## Menjalankan dengan Docker Compose
 
 Pastikan file `.env` sudah dibuat dan `GEMINI_API_KEY` sudah diisi.
@@ -405,6 +605,9 @@ npm run build
 
 ```text
 pam-ai/
+├── api/
+│   ├── chat.mjs               # Vercel Function untuk chat
+│   └── health.mjs             # Vercel health endpoint
 ├── server/
 │   └── index.mjs              # Express API + integrasi Gemini
 ├── src/
@@ -418,6 +621,7 @@ pam-ai/
 ├── instructions-model.md      # System instruction PAM AI
 ├── package.json
 ├── vite.config.ts
+├── vercel.json                # Konfigurasi Vercel Functions
 └── README.md
 ```
 
