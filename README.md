@@ -129,7 +129,7 @@ Kemudian edit file `.env`:
 ```env
 GEMINI_API_KEY=your_google_ai_studio_api_key
 
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.5-flash
 
 PORT=3001
 
@@ -145,7 +145,7 @@ RATE_LIMIT_MAX=30
 | Variable | Wajib | Default | Keterangan |
 |---|---|---|---|
 | `GEMINI_API_KEY` | Ya | - | API key Google Gemini. |
-| `GEMINI_MODEL` | Tidak | `gemini-2.5-flash` | Model Gemini yang digunakan. |
+| `GEMINI_MODEL` | Tidak | `gemini-3.5-flash` | Model Gemini yang digunakan. |
 | `PORT` | Tidak | `3001` | Port backend/production server. |
 | `GEMINI_TEMPERATURE` | Tidak | `0.7` | Mengatur variasi respons model. |
 | `GEMINI_MAX_OUTPUT_TOKENS` | Tidak | `8192` | Batas maksimum output model. |
@@ -295,7 +295,7 @@ GEMINI_API_KEY=API_KEY_GEMINI_ANDA
 Environment variable tambahan yang dapat digunakan:
 
 ```env
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.5-flash
 GEMINI_TEMPERATURE=0.7
 GEMINI_MAX_OUTPUT_TOKENS=8192
 ```
@@ -336,7 +336,7 @@ Contoh response:
 ```json
 {
   "ok": true,
-  "model": "gemini-2.5-flash",
+  "model": "gemini-3.5-flash",
   "runtime": "vercel"
 }
 ```
@@ -380,6 +380,12 @@ Pastikan `GEMINI_API_KEY` sudah ditambahkan pada Environment Variables Vercel.
 Setelah menambah atau mengubah environment variable, lakukan deployment ulang agar nilai terbaru digunakan oleh function.
 
 #### Health endpoint bekerja tetapi chat gagal
+
+Pastikan `GEMINI_MODEL` di Vercel menggunakan model yang tersedia untuk project/API key Anda. Untuk project baru, gunakan model Gemini generasi terbaru, misalnya:
+
+```env
+GEMINI_MODEL=gemini-3.5-flash
+```
 
 Periksa Function Logs pada:
 
@@ -528,7 +534,7 @@ Contoh response:
 ```json
 {
   "ok": true,
-  "model": "gemini-2.5-flash"
+  "model": "gemini-3.5-flash"
 }
 ```
 
