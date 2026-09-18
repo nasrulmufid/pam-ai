@@ -21,6 +21,16 @@ PAM AI dirancang untuk membantu aktivitas developer seperti menulis kode, debugg
 - Response compression.
 - Siap dijalankan secara lokal, VPS, Docker, maupun Vercel.
 
+## Screenshot
+
+<p align="center">
+  <img src="./file_000000005418820bb91b683b6ef25001.png" alt="PAM AI Android Mockup" width="900" />
+</p>
+
+<p align="center">
+  Tampilan PAM AI pada perangkat Android.
+</p>
+
 ## Tech Stack
 
 ### Frontend
