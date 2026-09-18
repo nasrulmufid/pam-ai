@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { readFile } from "node:fs/promises";
 import { z } from "zod";
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 const TEMPERATURE = Number(process.env.GEMINI_TEMPERATURE || 0.7);
 const MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 8192);
 const instructionsPath = new URL("../instructions-model.md", import.meta.url);
@@ -92,8 +92,11 @@ export default async function handler(req, res) {
   }));
 
   let disconnected = false;
-  req.on("close", () => {
+  req.on("aborted", () => {
     disconnected = true;
+  });
+  res.on("close", () => {
+    if (!res.writableEnded) disconnected = true;
   });
 
   try {
@@ -126,14 +129,41 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("Gemini request failed on Vercel:", error);
 
+    const status = Number(error?.status || error?.code || 0);
+    const message = String(error?.message || "");
+    const normalized = message.toLowerCase();
+
+    let publicError = "Permintaan ke penyedia AI gagal.";
+
+    if (
+      status === 404 ||
+      normalized.includes("model_or_resource") ||
+      normalized.includes("model not found") ||
+      normalized.includes("not found")
+    ) {
+      publicError = `Model Gemini "${MODEL}" tidak tersedia untuk API key/project ini. Gunakan model yang tersedia, misalnya gemini-3.5-flash.`;
+    } else if (
+      status === 401 ||
+      status === 403 ||
+      normalized.includes("api key") ||
+      normalized.includes("permission")
+    ) {
+      publicError = "GEMINI_API_KEY tidak valid atau tidak memiliki izin untuk menggunakan Gemini API.";
+    } else if (
+      status === 429 ||
+      normalized.includes("quota") ||
+      normalized.includes("rate limit") ||
+      normalized.includes("resource_exhausted")
+    ) {
+      publicError = "Quota atau rate limit Gemini API tercapai. Silakan coba lagi setelah beberapa saat atau periksa quota project.";
+    }
+
     if (!res.headersSent) {
-      return sendJson(res, 502, {
-        error: "Permintaan ke penyedia AI gagal."
-      });
+      return sendJson(res, 502, { error: publicError });
     }
 
     if (!res.writableEnded) {
-      res.write("\n\n[Penyedia AI mengembalikan error. Silakan coba lagi.]");
+      res.write(`\n\n[${publicError}]`);
       res.end();
     }
   }
